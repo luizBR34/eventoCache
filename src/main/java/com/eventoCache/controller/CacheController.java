@@ -1,6 +1,7 @@
 package com.eventoCache.controller;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.util.List;
 
@@ -26,11 +27,14 @@ public class CacheController {
 	public @ResponseBody List<Event> listEvents() {
 		List<Event> eventList = service.listEvents();
 		
-		//Envia requisiçao para EventoWS
+		//Send request to EventoWS
 		if (isNull(eventList) || eventList.isEmpty()) {
+			eventList = service.listEventsFromAPI();
 			
-			
-			
+			//Save data in the Redis for next requests.
+			if (nonNull(eventList) & (!eventList.isEmpty())) {
+				service.saveEvents(eventList);
+			}
 		}
 		
 		
@@ -42,13 +46,15 @@ public class CacheController {
 	public @ResponseBody Event searchEvent(@PathVariable("code") long code) {
 		Event event = service.searchEvent(code);
 		
-		//Envia requisiçao para EventoWS
+		//Send request to EventoWS
 		if (isNull(event)) {
+			event = service.searchEventFromAPI(code);
 			
-			
-			
+			//Save data in the Redis for next requests.
+			if (nonNull(event)) {
+				service.saveEvent(event);
+			}
 		}
-		
 		
 		return event;
 	}

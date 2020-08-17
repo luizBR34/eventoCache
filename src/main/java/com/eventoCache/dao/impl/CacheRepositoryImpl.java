@@ -2,6 +2,8 @@ package com.eventoCache.dao.impl;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ListOperations;
@@ -16,6 +18,8 @@ import com.eventoCache.model.Guest;
 public class CacheRepositoryImpl implements CacheRepository {
 	
 	public static final String REDIS_LIST_KEY = "ListaEventos";
+	
+	private final Logger log = LoggerFactory.getLogger(CacheRepositoryImpl.class);
 	
 	@Autowired
 	@Qualifier("listOperations")
@@ -40,5 +44,15 @@ public class CacheRepositoryImpl implements CacheRepository {
 	public List<Guest> listGuests(Event event) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void saveEvents(List<Event> list) {
+		ListOps.rightPushAll(REDIS_LIST_KEY, list);
+	}
+
+	@Override
+	public void saveEvent(Event event) {
+		ListOps.rightPush(REDIS_LIST_KEY, event);
 	}
 }
