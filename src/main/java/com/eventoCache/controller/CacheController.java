@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eventoCache.model.Event;
+import com.eventoCache.model.User;
 import com.eventoCache.service.CacheService;
 
 @RestController
@@ -42,7 +43,7 @@ public class CacheController {
 	}
 	
 	
-	@GetMapping(value="/searchEvent/{code}", produces="application/json")
+	@GetMapping(value="/{code}", produces="application/json")
 	public @ResponseBody Event searchEvent(@PathVariable("code") long code) {
 		Event event = service.searchEvent(code);
 		
@@ -58,4 +59,23 @@ public class CacheController {
 		
 		return event;
 	}
+	
+	
+	@GetMapping(value="/seekUser/{login}", produces="application/json")
+	public @ResponseBody User seekUser(@PathVariable("login") String login) {
+		User user  = service.seekUser(login);
+		
+		//Send request to EventoWS
+		if (isNull(user)) {
+			user = service.seekUserFromAPI(login);
+			
+			//Save data in the Redis for next requests.
+			if (nonNull(user)) {
+				service.saveUser(user);
+			}
+		}
+		
+		return user;
+	}
+
 }

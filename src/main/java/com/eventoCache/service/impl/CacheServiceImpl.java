@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import com.eventoCache.dao.CacheRepository;
 import com.eventoCache.model.Event;
 import com.eventoCache.model.Guest;
+import com.eventoCache.model.User;
 import com.eventoCache.service.CacheService;
 
 
@@ -26,7 +27,7 @@ public class CacheServiceImpl implements CacheService {
 	private CacheRepository rep;
 	
     @Value(value = "${eventows.endpoint.uri}")
-    private String endpointURI;
+    private String eventoWSEndpointURI;
     
     RestTemplate restTemplate = new RestTemplate();
     
@@ -51,7 +52,7 @@ public class CacheServiceImpl implements CacheService {
 	@Override
 	public List<Event> listEventsFromAPI() {
 
-		ResponseEntity<List<Event>> responseEntity = restTemplate.exchange(endpointURI, HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() { });
+		ResponseEntity<List<Event>> responseEntity = restTemplate.exchange(eventoWSEndpointURI, HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() { });
 		List<Event> listOfEvents = null;
 		
 		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
@@ -68,7 +69,7 @@ public class CacheServiceImpl implements CacheService {
 
 	@Override
 	public Event searchEventFromAPI(long code) {
-		ResponseEntity<Event> responseEntity = restTemplate.exchange(endpointURI, HttpMethod.GET, null, Event.class);
+		ResponseEntity<Event> responseEntity = restTemplate.exchange(eventoWSEndpointURI, HttpMethod.GET, null, Event.class);
 		Event event = null;
 		
 		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
@@ -97,5 +98,34 @@ public class CacheServiceImpl implements CacheService {
 	public void saveEvent(Event event) {
 		rep.saveEvent(event);
 		log.error("CacheServiceImpl:saveEvents() - The Event was persisted with success!");		
+	}
+
+	@Override
+	public User seekUser(String login) {
+		return rep.seekUser(login);
+	}
+
+	@Override
+	public User seekUserFromAPI(String login) {
+		
+		String path = eventoWSEndpointURI + "/seekUser/" + login;
+
+		ResponseEntity<User> responseEntity = restTemplate.exchange(path, HttpMethod.GET, null, User.class);
+		User user = null;
+		
+		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+			log.info("CacheServiceImpl:seekUserFromAPI() - EventoWS API responded the request successfully!");
+			user = responseEntity.getBody();
+		} else {
+			log.error("Error when request user from API!");
+		}
+		
+		return user;
+	}
+
+	@Override
+	public void saveUser(User user) {
+		rep.saveUser(user);
+		log.error("CacheServiceImpl:saveUser() - The User was persisted with success!");	
 	}
 }

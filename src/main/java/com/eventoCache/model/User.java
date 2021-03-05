@@ -1,6 +1,7 @@
 package com.eventoCache.model;
 
 import java.io.Serializable;
+import java.util.Collection;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,13 +18,21 @@ import lombok.ToString;
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class Guest implements Serializable {
+public class User implements Serializable {
 
-	private static final long serialVersionUID = -8519957630327736235L;
+	private static final long serialVersionUID = -203264994057523497L;
 
 	private Long id;
-	
-	private String guestName;
-	
-	private Event event;
+
+	private String userName;
+
+	private String password;
+
+	private String firstName;
+
+	private String lastName;
+
+	private String email;
+
+	private Collection<Role> roles;
 }

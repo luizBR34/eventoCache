@@ -17,13 +17,11 @@ import lombok.ToString;
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class Guest implements Serializable {
+public class Role implements Serializable {
 
-	private static final long serialVersionUID = -8519957630327736235L;
+	private static final long serialVersionUID = -6878435239875390450L;
 
 	private Long id;
-	
-	private String guestName;
-	
-	private Event event;
+
+	private String name;
 }

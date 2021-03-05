@@ -9,6 +9,7 @@ import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -16,6 +17,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.util.StringUtils;
 
 import com.eventoCache.model.Event;
+import com.eventoCache.model.User;
 
 @Configuration
 public class DataConfiguration {
@@ -69,10 +71,19 @@ public class DataConfiguration {
 	}
 	
 	@Bean
-	@Qualifier("stringOperations")
-	public ValueOperations<String, Event> stringOperations(RedisTemplate<String, Event> redisTemplate) {
+	@Qualifier("eventOperations")
+	public ValueOperations<String, Event> eventOperations(RedisTemplate<String, Event> redisTemplate) {
 		return redisTemplate.opsForValue();
 	}
+	
+
+	
+    @Bean
+    @Qualifier("hashUserOperations")
+    public HashOperations<String, Integer, User> hashOperations(RedisTemplate<String, Object>  redisTemplate) {
+        return redisTemplate.opsForHash();
+    }
+	
 
 	@Bean
 	@Qualifier("listOperations")
