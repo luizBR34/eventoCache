@@ -50,9 +50,11 @@ public class CacheServiceImpl implements CacheService {
 	}
 
 	@Override
-	public List<Event> listEventsFromAPI() {
+	public List<Event> listEventsFromAPI(String username) {
+		
+		String path = eventoWSEndpointURI + "/eventList/" + username;
 
-		ResponseEntity<List<Event>> responseEntity = restTemplate.exchange(eventoWSEndpointURI, HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() { });
+		ResponseEntity<List<Event>> responseEntity = restTemplate.exchange(path, HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() { });
 		List<Event> listOfEvents = null;
 		
 		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {

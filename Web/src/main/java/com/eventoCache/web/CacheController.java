@@ -24,13 +24,13 @@ public class CacheController {
 	private CacheService service;
 	
 	
-	@GetMapping(produces="application/json")
-	public @ResponseBody List<Event> listEvents() {
+	@GetMapping(value="/eventList/{username}", produces="application/json")
+	public @ResponseBody List<Event> listEvents(@PathVariable("username") String username) {
 		List<Event> eventList = service.listEvents();
 		
 		//Send request to EventoWS
 		if (isNull(eventList) || eventList.isEmpty()) {
-			eventList = service.listEventsFromAPI();
+			eventList = service.listEventsFromAPI(username);
 			
 			//Save data in the Redis for next requests.
 			if (nonNull(eventList) & (!eventList.isEmpty())) {

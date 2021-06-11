@@ -9,7 +9,7 @@ import com.eventoApp.models.User;
 public interface CacheService {
 	
 	public List<Event> listEvents();
-	public List<Event> listEventsFromAPI();
+	public List<Event> listEventsFromAPI(String username);
 
 	public Event searchEvent(long code);
 	public Event searchEventFromAPI(long code);
