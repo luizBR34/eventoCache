@@ -1,5 +1,8 @@
 package com.eventoCache.configs;
 
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
+
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,26 +17,32 @@ import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
+import org.springframework.session.web.context.AbstractHttpSessionApplicationInitializer;
 import org.springframework.util.StringUtils;
 
 import com.eventoApp.models.Event;
 import com.eventoApp.models.User;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
-public class DataConfiguration {
+@EnableRedisHttpSession
+public class DataConfiguration extends AbstractHttpSessionApplicationInitializer {
 	
-	@Value("${redis.host}")
+	@Value("${spring.redis.host}")
 	private String host;
-	@Value("${redis.password}")
+	@Value("${spring.redis.password}")
 	private String password;
-	@Value("${redis.port}")
+	@Value("${spring.redis.port}")
 	private int port;
 	
-	@Value("${redis.jedis.pool.max-total}")
+	@Value("${spring.redis.jedis.pool.max-total}")
 	private int maxTotal;
-	@Value("${redis.jedis.pool.max-idle}")
+	@Value("${spring.redis.jedis.pool.max-idle}")
 	private int maxIdle;
-	@Value("${redis.jedis.pool.min-idle}")
+	@Value("${spring.redis.jedis.pool.min-idle}")
 	private int minIdle;
 	
 	
@@ -69,6 +78,27 @@ public class DataConfiguration {
 		redisTemplate.setKeySerializer(new StringRedisSerializer());
 		return redisTemplate;
 	}
+	
+	
+	@Bean
+	public HttpSessionListener httpSessionListener() {
+	 return new HttpSessionListener() {
+	     @Override
+	     public void sessionCreated(HttpSessionEvent se) {
+	         log.info("Session Created with session id: " + se.getSession().getId());
+	         
+	         while(se.getSession().getAttributeNames().hasMoreElements()) {
+	        	 log.info("Attribute name: " + se.getSession().getAttributeNames().nextElement());
+	         }
+	     }
+	     
+	     @Override
+	     public void sessionDestroyed(HttpSessionEvent se) {
+	    	 log.info("Session Destroyed, Session id: " + se.getSession().getId());
+	     }
+	 };
+	}
+	
 	
 	@Bean
 	@Qualifier("eventOperations")
