@@ -1,8 +1,5 @@
 package com.eventoCache.configs;
 
-import javax.servlet.http.HttpSessionEvent;
-import javax.servlet.http.HttpSessionListener;
-
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,9 +21,6 @@ import org.springframework.util.StringUtils;
 import com.eventoApp.models.Event;
 import com.eventoApp.models.User;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Configuration
 @EnableRedisHttpSession
 public class DataConfiguration extends AbstractHttpSessionApplicationInitializer {
@@ -79,42 +73,20 @@ public class DataConfiguration extends AbstractHttpSessionApplicationInitializer
 		return redisTemplate;
 	}
 	
-	
-	@Bean
-	public HttpSessionListener httpSessionListener() {
-	 return new HttpSessionListener() {
-	     @Override
-	     public void sessionCreated(HttpSessionEvent se) {
-	         log.info("Session Created with session id: " + se.getSession().getId());
-	         
-	         while(se.getSession().getAttributeNames().hasMoreElements()) {
-	        	 log.info("Attribute name: " + se.getSession().getAttributeNames().nextElement());
-	         }
-	     }
-	     
-	     @Override
-	     public void sessionDestroyed(HttpSessionEvent se) {
-	    	 log.info("Session Destroyed, Session id: " + se.getSession().getId());
-	     }
-	 };
-	}
-	
-	
+
 	@Bean
 	@Qualifier("eventOperations")
-	public ValueOperations<String, Event> eventOperations(RedisTemplate<String, Event> redisTemplate) {
+	public ValueOperations<Long, Event> eventOperations(RedisTemplate<Long, Event> redisTemplate) {
 		return redisTemplate.opsForValue();
 	}
 	
 
-	
     @Bean
     @Qualifier("hashUserOperations")
-    public HashOperations<String, Integer, User> hashOperations(RedisTemplate<String, Object>  redisTemplate) {
+    public HashOperations<String, Integer, User> hashUserOperations(RedisTemplate<String, Object>  redisTemplate) {
         return redisTemplate.opsForHash();
     }
-	
-
+    
 	@Bean
 	@Qualifier("listOperations")
 	public ListOperations<String, Event> listOperations(RedisTemplate<String, Event> redisTemplate) {

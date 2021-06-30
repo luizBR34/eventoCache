@@ -18,6 +18,8 @@ public interface CacheRepository {
 	
 	public void saveEvent(Event event);
 	public void saveEvents(List<Event> list);
+	
+	public void updateEvent(long code, Event event);
 
 	public void saveUser(User user);
 }

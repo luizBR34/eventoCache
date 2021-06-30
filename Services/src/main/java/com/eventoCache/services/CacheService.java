@@ -2,6 +2,8 @@ package com.eventoCache.services;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
 import com.eventoApp.models.Event;
 import com.eventoApp.models.Guest;
 import com.eventoApp.models.User;
@@ -21,7 +23,12 @@ public interface CacheService {
 	public List<Guest> listGuestsFromAPI(Event event);
 	
 	public void saveEvent(Event event);
+	public void saveEventIntoAPI(Event event);
 	public void saveEvents(List<Event> list);
 	
 	public void saveUser(User user);
+	
+	public void saveGuest(long eventCode, Guest guest);
+	public void saveGuestIntoAPI(long eventCode, @Valid Guest guest);
+	
 }

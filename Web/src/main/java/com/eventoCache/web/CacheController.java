@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eventoApp.models.Event;
+import com.eventoApp.models.Guest;
 import com.eventoApp.models.User;
+import com.eventoCache.configs.SessionData;
 import com.eventoCache.services.CacheService;
 
 @RestController
@@ -28,8 +30,13 @@ public class CacheController {
 	@Autowired
 	private CacheService service;
 	
-	 @Autowired 
-	 private HttpSession session;
+	@Autowired 
+	private HttpSession session;
+	
+	@Autowired
+	private SessionData sessionData;
+	
+
 	
 	
 	@GetMapping(value="/eventList/{username}", produces="application/json")
@@ -87,17 +94,49 @@ public class CacheController {
 	}
 	
 	
+	@PostMapping(value="/saveEvent", produces="application/json")
+	public void saveEvent(@RequestBody @Valid Event event) {
+		
+		service.saveEvent(event);
+		service.saveEventIntoAPI(event);
+	}
+	
+	
+	@PostMapping(value="/saveGuest/{eventCode}", produces="application/json")
+	public void saveGuest(@PathVariable("eventCode") long eventCode, @RequestBody @Valid Guest guest) {
+		
+		service.saveGuest(eventCode, guest);
+		service.saveGuestIntoAPI(eventCode, guest);
+	}
+	
+	
 	@PostMapping(value="/saveSession", produces="application/json")
 	public void saveSession(@RequestBody @Valid User user) {
-		session.setAttribute("user", user.getUserName());
+		session.setAttribute("loggedUser", user.getUserName());
+		sessionData.setUserName(user.getUserName());
 	}
 	
 	
 	@GetMapping(value="/getSession", produces="application/json")
 	public @ResponseBody User getSession() {
-		return User.builder().userName(nonNull(session.getAttribute("user")) ? 
-									   session.getAttribute("user").toString() : 
-									   "Visitor").build();
+		
+		User user = null;
+		String userName = sessionData.getUserName();
+		
+		if (nonNull(userName)) {
+			
+			user = service.seekUser(userName);
+			
+			if (isNull(user)) {
+				user = service.seekUserFromAPI(userName);
+			} 
+		}
+		
+		if (isNull(user)) {
+			user = User.builder().firstName("Visitor").build();
+		}
+		
+		return user;
 	}
 	
 }

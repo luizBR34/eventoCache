@@ -20,7 +20,6 @@ import com.eventoApp.models.User;
 public class CacheRepositoryImpl implements CacheRepository {
 	
 	public static final String REDIS_EVENT_LIST_KEY = "ListaEventos";
-	public static final String REDIS_EVENT_KEY = "Evento";
 	public static final String REDIS_USER_KEY = "Usuario";
 	
 	private final Logger log = LoggerFactory.getLogger(CacheRepositoryImpl.class);
@@ -31,9 +30,8 @@ public class CacheRepositoryImpl implements CacheRepository {
 	
 	@Autowired
 	@Qualifier("eventOperations")
-	private ValueOperations<String, Event> EventOps;
+	private ValueOperations<Long, Event> EventOps;
 	
-
 	@Autowired
 	@Qualifier("hashUserOperations")
 	private HashOperations<String, Integer, com.eventoApp.models.User> UserOps;
@@ -62,8 +60,14 @@ public class CacheRepositoryImpl implements CacheRepository {
 
 	@Override
 	public void saveEvent(Event event) {
-		ListOps.rightPush(REDIS_EVENT_KEY, event);
+		ListOps.rightPush(REDIS_EVENT_LIST_KEY, event);
 	}
+	
+	@Override
+	public void updateEvent(long code, Event event) {
+		ListOps.set(REDIS_EVENT_LIST_KEY, code, event);
+	}
+	
 
 	@Override
 	public User seekUser(String login) {

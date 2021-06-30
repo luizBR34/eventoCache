@@ -2,11 +2,19 @@ package com.eventoCache.services.impl;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
+import static java.util.Objects.nonNull;
+
+import java.util.Collections;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +25,7 @@ import com.eventoCache.persistence.CacheRepository;
 import com.eventoApp.models.Event;
 import com.eventoApp.models.Guest;
 import com.eventoApp.models.User;
+import org.springframework.amqp.core.AmqpTemplate;
 import com.eventoCache.services.CacheService;
 
 
@@ -28,6 +37,13 @@ public class CacheServiceImpl implements CacheService {
 	
     @Value(value = "${eventows.endpoint.uri}")
     private String eventoWSEndpointURI;
+    
+	@Autowired
+	private Environment env;
+    
+	@Autowired
+	@Qualifier("template")
+	private AmqpTemplate template;
     
     RestTemplate restTemplate = new RestTemplate();
     
@@ -93,13 +109,28 @@ public class CacheServiceImpl implements CacheService {
 	@Override
 	public void saveEvents(List<Event> list) {
 		rep.saveEvents(list);
-		log.error("CacheServiceImpl:saveEvents() - Events were persisted with success!");
+		log.info("CacheServiceImpl:saveEvents() - Events were persisted with success!");
 	}
 
 	@Override
 	public void saveEvent(Event event) {
 		rep.saveEvent(event);
-		log.error("CacheServiceImpl:saveEvents() - The Event was persisted with success!");		
+		log.info("CacheServiceImpl:saveEvents() - The Event was persisted with success!");		
+	}
+	
+	@Override
+	public void saveEventIntoAPI(Event event) {
+		
+		String topicExchangeBroker = env.getProperty("name.topicexchange.eventoapp");
+		String routingKey = env.getProperty("name.routingKey.eventoapp");
+
+		template.convertAndSend(topicExchangeBroker, routingKey, event, m -> {
+			m.getMessageProperties().getHeaders().put("operation", "event");
+			return m;
+		});
+		
+		log.info("CacheServiceImpl:saveEventIntoAPI() - The Event was sent to a RabbitMQ queue with success!");
+				
 	}
 
 	@Override
@@ -130,4 +161,40 @@ public class CacheServiceImpl implements CacheService {
 		rep.saveUser(user);
 		log.error("CacheServiceImpl:saveUser() - The User was persisted with success!");	
 	}
+	
+	
+	@Override
+	public void saveGuest(long eventCode, Guest guest) {
+		
+		Event event = rep.searchEvent(eventCode);
+		List<Guest> guestList = event.getGuests();
+		
+		if (nonNull(guestList)) {
+			if (!guestList.contains(guest)) {
+				guestList.add(guest);
+			}
+		} else {
+			guestList = Collections.emptyList();
+			guestList.add(guest);
+		}
+		
+		event.setGuests(guestList);
+		rep.updateEvent(eventCode, event);
+	}
+	
+	
+	public void saveGuestIntoAPI(long eventCode, @Valid Guest guest) {
+
+		String topicExchangeBroker = env.getProperty("name.topicexchange.eventoapp");
+		String routingKey = env.getProperty("name.routingKey.eventoapp");
+
+		template.convertAndSend(topicExchangeBroker, routingKey, guest, m -> {
+		    m.getMessageProperties().getHeaders().put("operation", "guest");
+		    m.getMessageProperties().getHeaders().put("eventCode", eventCode);
+		    return m;
+		});
+		
+		log.info("CacheServiceImpl:saveGuestIntoAPI() - The Guest was sent to a RabbitMQ queue with success!");
+	}
+
 }
