@@ -50,8 +50,8 @@ public class CacheServiceImpl implements CacheService {
     private final Logger log = LoggerFactory.getLogger(CacheServiceImpl.class);
 
 	@Override
-	public List<Event> listEvents() {
-		return rep.listEvents();
+	public List<Event> listEvents(String username) {
+		return rep.listEvents(username);
 	}
 
 	@Override
@@ -107,8 +107,8 @@ public class CacheServiceImpl implements CacheService {
 	}
 
 	@Override
-	public void saveEvents(List<Event> list) {
-		rep.saveEvents(list);
+	public void saveEvents(String username, List<Event> list) {
+		rep.saveEvents(username, list);
 		log.info("CacheServiceImpl:saveEvents() - Events were persisted with success!");
 	}
 

@@ -41,7 +41,7 @@ public class CacheController {
 	
 	@GetMapping(value="/eventList/{username}", produces="application/json")
 	public @ResponseBody List<Event> listEvents(@PathVariable("username") String username) {
-		List<Event> eventList = service.listEvents();
+		List<Event> eventList = service.listEvents(username);
 		
 		//Send request to EventoWS
 		if (isNull(eventList) || eventList.isEmpty()) {
@@ -49,7 +49,7 @@ public class CacheController {
 			
 			//Save data in the Redis for next requests.
 			if (nonNull(eventList) & (!eventList.isEmpty())) {
-				service.saveEvents(eventList);
+				service.saveEvents(username, eventList);
 			}
 		}
 		
@@ -58,8 +58,8 @@ public class CacheController {
 	}
 	
 	
-	@GetMapping(value="/{code}", produces="application/json")
-	public @ResponseBody Event searchEvent(@PathVariable("code") long code) {
+	@GetMapping(value="/seekEvent/{code}", produces="application/json")
+	public @ResponseBody Event seekEvent(@PathVariable("code") long code) {
 		Event event = service.searchEvent(code);
 		
 		//Send request to EventoWS

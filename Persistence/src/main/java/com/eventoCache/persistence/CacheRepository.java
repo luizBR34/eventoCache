@@ -8,7 +8,7 @@ import com.eventoApp.models.User;
 
 public interface CacheRepository {
 	
-	public List<Event> listEvents();
+	public List<Event> listEvents(String username);
 
 	public Event searchEvent(long code);
 	
@@ -17,7 +17,7 @@ public interface CacheRepository {
 	public List<Guest> listGuests(Event event);
 	
 	public void saveEvent(Event event);
-	public void saveEvents(List<Event> list);
+	public void saveEvents(String username, List<Event> list);
 	
 	public void updateEvent(long code, Event event);
 

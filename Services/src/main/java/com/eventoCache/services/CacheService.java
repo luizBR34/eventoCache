@@ -10,7 +10,7 @@ import com.eventoApp.models.User;
 
 public interface CacheService {
 	
-	public List<Event> listEvents();
+	public List<Event> listEvents(String username);
 	public List<Event> listEventsFromAPI(String username);
 
 	public Event searchEvent(long code);
@@ -24,7 +24,7 @@ public interface CacheService {
 	
 	public void saveEvent(Event event);
 	public void saveEventIntoAPI(Event event);
-	public void saveEvents(List<Event> list);
+	public void saveEvents(String username, List<Event> list);
 	
 	public void saveUser(User user);
 	

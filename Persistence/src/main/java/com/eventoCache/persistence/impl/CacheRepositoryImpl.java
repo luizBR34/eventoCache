@@ -19,8 +19,8 @@ import com.eventoApp.models.User;
 @Repository
 public class CacheRepositoryImpl implements CacheRepository {
 	
-	public static final String REDIS_EVENT_LIST_KEY = "ListaEventos";
-	public static final String REDIS_USER_KEY = "Usuario";
+	//public static final String REDIS_EVENT_LIST_KEY = "ListaEventos";
+	//public static final String REDIS_USER_KEY = "Usuario";
 	
 	private final Logger log = LoggerFactory.getLogger(CacheRepositoryImpl.class);
 	
@@ -38,8 +38,8 @@ public class CacheRepositoryImpl implements CacheRepository {
 	
 
 	@Override
-	public List<Event> listEvents() {
-		return ListOps.range(REDIS_EVENT_LIST_KEY, 0, -1);
+	public List<Event> listEvents(String username) {
+		return ListOps.range(username + "List", 0, -1);
 	}
 
 	@Override
@@ -54,28 +54,28 @@ public class CacheRepositoryImpl implements CacheRepository {
 	}
 
 	@Override
-	public void saveEvents(List<Event> list) {
-		ListOps.rightPushAll(REDIS_EVENT_LIST_KEY, list);
+	public void saveEvents(String username, List<Event> list) {
+		ListOps.rightPushAll(username + "List", list);
 	}
 
 	@Override
 	public void saveEvent(Event event) {
-		ListOps.rightPush(REDIS_EVENT_LIST_KEY, event);
+		ListOps.rightPush(event.getUser().getUserName() + "List", event);
 	}
 	
 	@Override
 	public void updateEvent(long code, Event event) {
-		ListOps.set(REDIS_EVENT_LIST_KEY, code, event);
+		ListOps.set(event.getUser().getUserName() + "List", code, event);
 	}
 	
 
 	@Override
 	public User seekUser(String login) {
-		return UserOps.get(REDIS_USER_KEY, login.hashCode());
+		return UserOps.get(login, login.hashCode());
 	}
 
 	@Override
 	public void saveUser(User user) {
-		UserOps.put(REDIS_USER_KEY, user.getUserName().hashCode(), user);
+		UserOps.put(user.getUserName(), user.getUserName().hashCode(), user);
 	}
 }
