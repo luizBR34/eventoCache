@@ -2,6 +2,7 @@ package com.eventoCache.configs;
 
 import java.io.Serializable;
 
+import com.eventoApp.models.User;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
@@ -26,5 +27,5 @@ public class SessionData implements Serializable {
 	
 	private static final long serialVersionUID = 6008565606165835651L;
 	
-	private String userName;
+	private User loggedUser;
 }

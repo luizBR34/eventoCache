@@ -10,7 +10,7 @@ public interface CacheRepository {
 	
 	public List<Event> listEvents(String username);
 
-	public Event searchEvent(long code);
+	public Event searchEvent(String username, long code);
 	
 	public User seekUser(String login);
 	
@@ -18,6 +18,8 @@ public interface CacheRepository {
 	
 	public void saveEvent(Event event);
 	public void saveEvents(String username, List<Event> list);
+
+	public void deleteEvent(Event event);
 	
 	public void updateEvent(long code, Event event);
 

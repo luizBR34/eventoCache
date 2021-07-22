@@ -1,12 +1,10 @@
 package com.eventoCache.services.impl;
 
-import java.util.List;
+import java.util.*;
 
 import javax.validation.Valid;
 
 import static java.util.Objects.nonNull;
-
-import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +53,8 @@ public class CacheServiceImpl implements CacheService {
 	}
 
 	@Override
-	public Event searchEvent(long code) {
-		return rep.searchEvent(code);
+	public Event searchEvent(String username, long code) {
+		return rep.searchEvent(username, code);
 	}
 
 	@Override
@@ -87,7 +85,10 @@ public class CacheServiceImpl implements CacheService {
 
 	@Override
 	public Event searchEventFromAPI(long code) {
-		ResponseEntity<Event> responseEntity = restTemplate.exchange(eventoWSEndpointURI, HttpMethod.GET, null, Event.class);
+		
+		String path = eventoWSEndpointURI + "/seekEvent/" + code;
+		
+		ResponseEntity<Event> responseEntity = restTemplate.exchange(path, HttpMethod.GET, null, Event.class);
 		Event event = null;
 		
 		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
@@ -134,6 +135,29 @@ public class CacheServiceImpl implements CacheService {
 	}
 
 	@Override
+	public void deleteEvent(String username, long code) {
+		Event event = rep.searchEvent(username, code);
+		rep.deleteEvent(event);
+	}
+
+	@Override
+	public void deleteEventFromAPI(long code) {
+
+		String path = eventoWSEndpointURI + "/deleteEvent/{code}";
+		Map<String, Long> map = new HashMap<>();
+		map.put("code", code);
+
+		ResponseEntity<Void> responseEntity = restTemplate.exchange(path, HttpMethod.DELETE, null, Void.class, map);
+
+		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+			log.info("CacheServiceImpl:deleteEventFromAPI() - EventoWS API responded the request successfully!");
+		} else {
+			log.error("Error when delete event from API!");
+		}
+	}
+
+
+	@Override
 	public User seekUser(String login) {
 		return rep.seekUser(login);
 	}
@@ -164,17 +188,16 @@ public class CacheServiceImpl implements CacheService {
 	
 	
 	@Override
-	public void saveGuest(long eventCode, Guest guest) {
+	public void saveGuest(String username, long eventCode, Guest guest) {
 		
-		Event event = rep.searchEvent(eventCode);
-		List<Guest> guestList = event.getGuests();
+		Event event = rep.searchEvent(username, eventCode);
+		List<Guest> guestList = nonNull(event) ? event.getGuests() : Collections.emptyList();
 		
-		if (nonNull(guestList)) {
+		if (!guestList.isEmpty()) {
 			if (!guestList.contains(guest)) {
 				guestList.add(guest);
 			}
 		} else {
-			guestList = Collections.emptyList();
 			guestList.add(guest);
 		}
 		

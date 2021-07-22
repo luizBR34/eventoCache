@@ -9,13 +9,8 @@ import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.eventoApp.models.Event;
 import com.eventoApp.models.Guest;
@@ -58,9 +53,9 @@ public class CacheController {
 	}
 	
 	
-	@GetMapping(value="/seekEvent/{code}", produces="application/json")
-	public @ResponseBody Event seekEvent(@PathVariable("code") long code) {
-		Event event = service.searchEvent(code);
+	@GetMapping(value="/seekEvent", produces="application/json")
+	public @ResponseBody Event seekEvent(@RequestParam("username") String username, @RequestParam("code") long code) {
+		Event event = service.searchEvent(username, code);
 		
 		//Send request to EventoWS
 		if (isNull(event)) {
@@ -102,33 +97,45 @@ public class CacheController {
 	}
 	
 	
-	@PostMapping(value="/saveGuest/{eventCode}", produces="application/json")
-	public void saveGuest(@PathVariable("eventCode") long eventCode, @RequestBody @Valid Guest guest) {
+	@PostMapping(value="/saveGuest", produces="application/json")
+	public void saveGuest(@RequestParam("username") String username, 
+						  @RequestParam("eventCode") long eventCode, 
+						  @RequestBody @Valid Guest guest) {
 		
-		service.saveGuest(eventCode, guest);
+		service.saveGuest(username, eventCode, guest);
 		service.saveGuestIntoAPI(eventCode, guest);
 	}
-	
+
+
+
+	@DeleteMapping("/deleteEvent")
+	public void deleteEvent(@RequestParam("username") String username,
+							@RequestParam("code") long code) {
+
+		service.deleteEvent(username, code);
+		service.deleteEventFromAPI(code);
+	}
+
+
 	
 	@PostMapping(value="/saveSession", produces="application/json")
 	public void saveSession(@RequestBody @Valid User user) {
-		session.setAttribute("loggedUser", user.getUserName());
-		sessionData.setUserName(user.getUserName());
+		session.setAttribute("loggedUser", user);
+		sessionData.setLoggedUser(user);
 	}
 	
 	
 	@GetMapping(value="/getSession", produces="application/json")
 	public @ResponseBody User getSession() {
+
+		User user = sessionData.getLoggedUser();
 		
-		User user = null;
-		String userName = sessionData.getUserName();
-		
-		if (nonNull(userName)) {
+		if (nonNull(user)) {
 			
-			user = service.seekUser(userName);
+			user = service.seekUser(user.getUserName());
 			
 			if (isNull(user)) {
-				user = service.seekUserFromAPI(userName);
+				user = service.seekUserFromAPI(user.getUserName());
 			} 
 		}
 		
@@ -138,5 +145,12 @@ public class CacheController {
 		
 		return user;
 	}
-	
+
+
+	@DeleteMapping("/deleteSession")
+	public void invalidateSession() {
+
+		this.session.invalidate();
+		this.sessionData.setLoggedUser(null);
+	}
 }

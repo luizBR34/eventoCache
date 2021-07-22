@@ -1,6 +1,7 @@
 package com.eventoCache.persistence.impl;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,18 +20,15 @@ import com.eventoApp.models.User;
 @Repository
 public class CacheRepositoryImpl implements CacheRepository {
 	
-	//public static final String REDIS_EVENT_LIST_KEY = "ListaEventos";
-	//public static final String REDIS_USER_KEY = "Usuario";
-	
 	private final Logger log = LoggerFactory.getLogger(CacheRepositoryImpl.class);
 	
 	@Autowired
 	@Qualifier("listOperations")
 	private ListOperations<String, Event> ListOps;
 	
-	@Autowired
+/*	@Autowired
 	@Qualifier("eventOperations")
-	private ValueOperations<Long, Event> EventOps;
+	private ValueOperations<String, Event> EventOps;*/
 	
 	@Autowired
 	@Qualifier("hashUserOperations")
@@ -43,8 +41,12 @@ public class CacheRepositoryImpl implements CacheRepository {
 	}
 
 	@Override
-	public Event searchEvent(long code) {
-		return EventOps.get(code);
+	public Event searchEvent(String username, long code) {
+		
+		Optional<Event> foundEvent = ListOps.range(username + "List", 0, -1).stream()
+																			.filter(e -> e.getCode() == code)
+																			.findFirst();
+		return foundEvent.isPresent() ? foundEvent.get() : null;
 	}
 
 	@Override
@@ -58,9 +60,15 @@ public class CacheRepositoryImpl implements CacheRepository {
 		ListOps.rightPushAll(username + "List", list);
 	}
 
-	@Override
+
+    @Override
 	public void saveEvent(Event event) {
 		ListOps.rightPush(event.getUser().getUserName() + "List", event);
+	}
+
+	@Override
+	public void deleteEvent(Event event) {
+		ListOps.remove(event.getUser().getUserName() + "List", 0, event);
 	}
 	
 	@Override

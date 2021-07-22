@@ -76,7 +76,7 @@ public class DataConfiguration extends AbstractHttpSessionApplicationInitializer
 
 	@Bean
 	@Qualifier("eventOperations")
-	public ValueOperations<Long, Event> eventOperations(RedisTemplate<Long, Event> redisTemplate) {
+	public ValueOperations<String, Event> eventOperations(RedisTemplate<String, Event> redisTemplate) {
 		return redisTemplate.opsForValue();
 	}
 	
