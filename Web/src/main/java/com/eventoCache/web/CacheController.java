@@ -140,7 +140,7 @@ public class CacheController {
 		}
 		
 		if (isNull(user)) {
-			user = User.builder().firstName("Visitor").build();
+			user = User.builder().userName("Visitor").build();
 		}
 		
 		return user;
