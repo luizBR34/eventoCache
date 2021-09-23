@@ -18,9 +18,9 @@ public interface CacheService {
 	
 	public User seekUser(String login);
 	public User seekUserFromAPI(String login);
-	
-	public List<Guest> listGuests(Event event);
-	public List<Guest> listGuestsFromAPI(Event event);
+
+	public List<Guest> guestsList(String username, long eventCode);
+	public List<Guest> guestsListFromAPI(long eventCode);
 	
 	public void saveEvent(Event event);
 	public void saveEventIntoAPI(Event event);

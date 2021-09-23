@@ -14,14 +14,13 @@ public interface CacheRepository {
 	
 	public User seekUser(String login);
 	
-	public List<Guest> listGuests(Event event);
-	
 	public void saveEvent(Event event);
+
 	public void saveEvents(String username, List<Event> list);
 
 	public void deleteEvent(Event event);
 	
-	public void updateEvent(long code, Event event);
+	public void updateEvent(Event event);
 
 	public void saveUser(User user);
 }

@@ -1,7 +1,6 @@
 package com.eventoCache.persistence.impl;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,8 @@ import com.eventoApp.models.Event;
 import com.eventoApp.models.Guest;
 import com.eventoApp.models.User;
 
+import static java.util.Objects.nonNull;
+
 @Repository
 public class CacheRepositoryImpl implements CacheRepository {
 	
@@ -25,10 +26,6 @@ public class CacheRepositoryImpl implements CacheRepository {
 	@Autowired
 	@Qualifier("listOperations")
 	private ListOperations<String, Event> ListOps;
-	
-/*	@Autowired
-	@Qualifier("eventOperations")
-	private ValueOperations<String, Event> EventOps;*/
 	
 	@Autowired
 	@Qualifier("hashUserOperations")
@@ -49,11 +46,6 @@ public class CacheRepositoryImpl implements CacheRepository {
 		return foundEvent.isPresent() ? foundEvent.get() : null;
 	}
 
-	@Override
-	public List<Guest> listGuests(Event event) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public void saveEvents(String username, List<Event> list) {
@@ -72,8 +64,8 @@ public class CacheRepositoryImpl implements CacheRepository {
 	}
 	
 	@Override
-	public void updateEvent(long code, Event event) {
-		ListOps.set(event.getUser().getUserName() + "List", code, event);
+	public void updateEvent(Event event) {
+		ListOps.set(event.getUser().getUserName() + "List", 0, event);
 	}
 	
 

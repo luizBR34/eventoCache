@@ -96,17 +96,6 @@ public class CacheController {
 		service.saveEventIntoAPI(event);
 	}
 	
-	
-	@PostMapping(value="/saveGuest", produces="application/json")
-	public void saveGuest(@RequestParam("username") String username, 
-						  @RequestParam("eventCode") long eventCode, 
-						  @RequestBody @Valid Guest guest) {
-		
-		service.saveGuest(username, eventCode, guest);
-		service.saveGuestIntoAPI(eventCode, guest);
-	}
-
-
 
 	@DeleteMapping("/deleteEvent")
 	public void deleteEvent(@RequestParam("username") String username,
@@ -117,7 +106,28 @@ public class CacheController {
 	}
 
 
-	
+
+
+	@GetMapping(value="/guestList", produces="application/json")
+	public @ResponseBody List<Guest> guestList(@RequestParam("username") String username,
+											   @RequestParam("eventCode") long eventCode) {
+
+		List<Guest> guestList = service.guestsList(username, eventCode);
+		return (!guestList.isEmpty()) ? guestList : service.guestsListFromAPI(eventCode);
+	}
+
+
+	@PostMapping(value="/saveGuest", produces="application/json")
+	public void saveGuest(@RequestParam("username") String username,
+						  @RequestParam("eventCode") long eventCode,
+						  @RequestBody @Valid Guest guest) {
+
+		service.saveGuest(username, eventCode, guest);
+		service.saveGuestIntoAPI(eventCode, guest);
+	}
+
+
+
 	@PostMapping(value="/saveSession", produces="application/json")
 	public void saveSession(@RequestBody @Valid User user) {
 		session.setAttribute("loggedUser", user);

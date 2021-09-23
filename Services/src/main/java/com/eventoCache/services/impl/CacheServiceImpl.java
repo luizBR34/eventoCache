@@ -58,9 +58,32 @@ public class CacheServiceImpl implements CacheService {
 	}
 
 	@Override
-	public List<Guest> listGuests(Event event) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Guest> guestsList(String username, long eventCode) {
+
+		Event event = rep.searchEvent(username, eventCode);
+
+		if (nonNull(event)) {
+			return nonNull(event.getGuests()) ? event.getGuests() : Collections.emptyList();
+		} else {
+			return Collections.emptyList();
+		}
+	}
+
+	public List<Guest> guestsListFromAPI(long eventCode) {
+
+		String path = eventoWSEndpointURI + "/guestList/" + eventCode;
+
+		ResponseEntity<List<Guest>> responseEntity = restTemplate.exchange(path, HttpMethod.GET, null, new ParameterizedTypeReference<List<Guest>>() { });
+		List<Guest> guestsList = null;
+
+		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+			log.info("CacheServiceImpl:guestsListFromAPI() - EventoWS API responded the request successfully!");
+			guestsList = responseEntity.getBody();
+		} else {
+			log.error("Error when request guest's list from API!");
+		}
+
+		return guestsList;
 	}
 
 	@Override
@@ -101,11 +124,6 @@ public class CacheServiceImpl implements CacheService {
 		return event;
 	}
 
-	@Override
-	public List<Guest> listGuestsFromAPI(Event event) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public void saveEvents(String username, List<Event> list) {
@@ -192,17 +210,22 @@ public class CacheServiceImpl implements CacheService {
 		
 		Event event = rep.searchEvent(username, eventCode);
 		List<Guest> guestList = nonNull(event) ? event.getGuests() : Collections.emptyList();
-		
-		if (!guestList.isEmpty()) {
-			if (!guestList.contains(guest)) {
+
+		if (nonNull(guestList)) {
+			if (!guestList.isEmpty()) {
+				if (!guestList.contains(guest)) {
+					guestList.add(guest);
+				}
+			} else {
 				guestList.add(guest);
 			}
 		} else {
+			guestList = new ArrayList<Guest>();
 			guestList.add(guest);
 		}
-		
+
 		event.setGuests(guestList);
-		rep.updateEvent(eventCode, event);
+		rep.updateEvent(event);
 	}
 	
 	
