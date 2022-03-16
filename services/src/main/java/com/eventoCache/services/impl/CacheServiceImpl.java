@@ -1,0 +1,242 @@
+package com.eventoCache.services.impl;
+
+import java.util.*;
+
+import static java.util.Objects.nonNull;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.eventoCache.persistence.CacheRepository;
+import com.eventoApp.models.Event;
+import com.eventoApp.models.Guest;
+import com.eventoApp.models.User;
+import org.springframework.amqp.core.AmqpTemplate;
+import com.eventoCache.services.CacheService;
+
+
+@Service
+public class CacheServiceImpl implements CacheService {
+	
+	@Autowired
+	private CacheRepository rep;
+	
+    @Value(value = "${eventows.endpoint.uri}")
+    private String eventoWSEndpointURI;
+    
+	@Autowired
+	private Environment env;
+    
+	@Autowired
+	@Qualifier("template")
+	private AmqpTemplate template;
+    
+    RestTemplate restTemplate = new RestTemplate();
+    
+    private final Logger log = LoggerFactory.getLogger(CacheServiceImpl.class);
+
+	@Override
+	public List<Event> listEvents(String username) {
+		return rep.listEvents(username);
+	}
+
+	@Override
+	public Event searchEvent(String username, long code) {
+		return rep.searchEvent(username, code);
+	}
+
+	@Override
+	public List<Guest> guestsList(String username, long eventCode) {
+
+		Event event = rep.searchEvent(username, eventCode);
+
+		if (nonNull(event)) {
+			return nonNull(event.getGuests()) ? event.getGuests() : Collections.emptyList();
+		} else {
+			return Collections.emptyList();
+		}
+	}
+
+	public List<Guest> guestsListFromAPI(long eventCode) {
+
+		String path = eventoWSEndpointURI + "/guestList/" + eventCode;
+
+		ResponseEntity<List<Guest>> responseEntity = restTemplate.exchange(path, HttpMethod.GET, null, new ParameterizedTypeReference<List<Guest>>() { });
+		List<Guest> guestsList = null;
+
+		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+			log.info("CacheServiceImpl:guestsListFromAPI() - EventoWS API responded the request successfully!");
+			guestsList = responseEntity.getBody();
+		} else {
+			log.error("Error when request guest's list from API!");
+		}
+
+		return guestsList;
+	}
+
+	@Override
+	public List<Event> listEventsFromAPI(String username) {
+		
+		String path = eventoWSEndpointURI + "/eventList/" + username;
+
+		ResponseEntity<List<Event>> responseEntity = restTemplate.exchange(path, HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() { });
+		List<Event> listOfEvents = null;
+		
+		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+			log.info("CacheServiceImpl:listEventsFromAPI() - EventoWS API responded the request successfully!");
+			listOfEvents = responseEntity.getBody();
+		} else {
+			log.error("Error when request event's list from API!");
+		}
+		
+		return listOfEvents;
+	}
+	
+	
+
+	@Override
+	public Event searchEventFromAPI(long code) {
+		
+		String path = eventoWSEndpointURI + "/seekEvent/" + code;
+		
+		ResponseEntity<Event> responseEntity = restTemplate.exchange(path, HttpMethod.GET, null, Event.class);
+		Event event = null;
+		
+		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+			log.info("CacheServiceImpl:searchEventFromAPI() - EventoWS API responded the request successfully!");
+			event = responseEntity.getBody();
+		} else {
+			log.error("Error when request event from API!");
+		}
+		
+		return event;
+	}
+
+
+	@Override
+	public void saveEvents(String username, List<Event> list) {
+		rep.saveEvents(username, list);
+		log.info("CacheServiceImpl:saveEvents() - Events were persisted with success!");
+	}
+
+	@Override
+	public void saveEvent(Event event) {
+		rep.saveEvent(event);
+		log.info("CacheServiceImpl:saveEvents() - The Event was persisted with success!");		
+	}
+	
+	@Override
+	public void saveEventIntoAPI(Event event) {
+		
+		String topicExchangeBroker = env.getProperty("name.topicexchange.eventoapp");
+		String routingKey = env.getProperty("name.routingKey.eventoapp");
+
+		template.convertAndSend(topicExchangeBroker, routingKey, event, m -> {
+			m.getMessageProperties().getHeaders().put("operation", "event");
+			return m;
+		});
+		
+		log.info("CacheServiceImpl:saveEventIntoAPI() - The Event was sent to a RabbitMQ queue with success!");
+	}
+
+	@Override
+	public void deleteEvent(String username, long code) {
+		Event event = rep.searchEvent(username, code);
+		rep.deleteEvent(event);
+	}
+
+	@Override
+	public void deleteEventFromAPI(long code) {
+
+		String path = eventoWSEndpointURI + "/deleteEvent/{code}";
+		Map<String, Long> map = new HashMap<>();
+		map.put("code", code);
+
+		ResponseEntity<Void> responseEntity = restTemplate.exchange(path, HttpMethod.DELETE, null, Void.class, map);
+
+		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+			log.info("CacheServiceImpl:deleteEventFromAPI() - EventoWS API responded the request successfully!");
+		} else {
+			log.error("Error when delete event from API!");
+		}
+	}
+
+
+	@Override
+	public User seekUser(String login) {
+		return rep.seekUser(login);
+	}
+
+	@Override
+	public User seekUserFromAPI(String login) {
+		
+		String path = eventoWSEndpointURI + "/seekUser/" + login;
+
+		ResponseEntity<User> responseEntity = restTemplate.exchange(path, HttpMethod.GET, null, User.class);
+		User user = null;
+		
+		if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+			log.info("CacheServiceImpl:seekUserFromAPI() - EventoWS API responded the request successfully!");
+			user = responseEntity.getBody();
+		} else {
+			log.error("Error when request user from API!");
+		}
+		
+		return user;
+	}
+
+	@Override
+	public void saveUser(User user) {
+		rep.saveUser(user);
+		log.error("CacheServiceImpl:saveUser() - The User was persisted with success!");	
+	}
+	
+	
+	@Override
+	public void saveGuest(String username, long eventCode, Guest guest) {
+		
+		Event event = rep.searchEvent(username, eventCode);
+		List<Guest> guestList = nonNull(event) ? event.getGuests() : Collections.emptyList();
+
+		if (nonNull(guestList)) {
+			if (!guestList.isEmpty()) {
+				if (!guestList.contains(guest)) {
+					guestList.add(guest);
+				}
+			} else {
+				guestList.add(guest);
+			}
+		} else {
+			guestList = new ArrayList<Guest>();
+			guestList.add(guest);
+		}
+
+		event.setGuests(guestList);
+		rep.updateEvent(event);
+	}
+	
+	
+	public void saveGuestIntoAPI(long eventCode, Guest guest) {
+
+		String topicExchangeBroker = env.getProperty("name.topicexchange.eventoapp");
+		String routingKey = env.getProperty("name.routingKey.eventoapp");
+
+		template.convertAndSend(topicExchangeBroker, routingKey, guest, m -> {
+		    m.getMessageProperties().getHeaders().put("operation", "guest");
+		    m.getMessageProperties().getHeaders().put("eventCode", eventCode);
+		    return m;
+		});
+		
+		log.info("CacheServiceImpl:saveGuestIntoAPI() - The Guest was sent to a RabbitMQ queue with success!");
+	}
+}

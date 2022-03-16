@@ -1,0 +1,68 @@
+version: '3.7'
+services:
+  eventoas-service:
+    image: luizpovoa/eventoas:0.0.1-SNAPSHOT
+    ports:
+      - "8081:8081"
+    container_name: EventoAS
+    environment:
+      VAULT_HOST: 172.18.0.2
+      EVENTOAPP_HOST: https://172.18.0.6:8443
+      EVENTO_CACHE_URI: https://172.18.0.7:8585
+      EVENTOANGULAR_HOST: http://localhost:4200
+    restart: always
+    networks:
+      - eventoapp-network
+
+  eventors-service:
+    image: luizpovoa/eventors:0.0.1-SNAPSHOT
+    ports:
+      - "8084:8084"
+    container_name: EventoRS
+    environment:
+      VAULT_HOST: 172.18.0.2
+      EVENTOAS_HOST: https://172.18.0.4:8081
+      EVENTO_CACHE_URI: https://172.18.0.7:8585
+      EVENTO_WS_URI: https://172.18.0.8:9090
+    restart: always
+    networks:
+      - eventoapp-network
+
+  eventoapp-service:
+    image: luizpovoa/eventoapp:0.0.1-SNAPSHOT
+    ports:
+      - "8443:8443"
+    container_name: EventoApp
+    environment:
+      VAULT_HOST: 172.18.0.2
+      EVENTOAS_HOST: https://172.18.0.4:8081
+      EVENTOAPP_HOST: https://172.18.0.6:8443
+      EVENTOANGULAR_HOST: http://localhost:4200
+    restart: always
+    networks:
+      - eventoapp-network
+
+  eventocache-service:
+    image: luizpovoa/eventocache:0.0.1-SNAPSHOT
+    ports:
+      - "8585:8585"
+    container_name: EventoCache
+    environment:
+      VAULT_HOST: 172.18.0.2
+      REDIS_HOST: redis-17294.c93.us-east-1-3.ec2.cloud.redislabs.com
+      REDIS_PORT: 17294
+      REDIS_PASSWORD: jTg6lvzKF0LTvbeTUUewJWaaVrgoWNZ8
+      RABBITMQ_HOST: 172.18.0.3
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: eventoapp
+      RABBITMQ_PASSWORD: segredo
+      RESPONSE_EXCHANGE: eventoapp.integration.exchange
+      RESPONSE_ROUTING_KEY: routingKey_eventoapp
+      EVENTO_WS_URI: https://172.18.0.8:9090
+    restart: always
+    networks:
+      - eventoapp-network
+
+networks:
+  eventoapp-network:
+    external: true

@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.eventoCache.boot</groupId>
-	<artifactId>boot</artifactId>
+	<groupId>com.eventoCache.web</groupId>
+	<artifactId>web</artifactId>
 	<packaging>jar</packaging>
 
 	<parent>
@@ -17,23 +17,25 @@
 	<!-- MODULES DENPENDENCY START -->
 	
         <dependency>
-            <groupId>com.eventoCache.configs</groupId>
-            <artifactId>configs</artifactId>
+            <groupId>com.eventoApp.models</groupId>
+            <artifactId>models</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+		
+        <dependency>
+            <groupId>com.eventoCache.services</groupId>
+            <artifactId>services</artifactId>
             <version>${project.version}</version>
         </dependency>
 
+	<!-- MODULES DENPENDENCY END -->
+
 		<dependency>
-			<groupId>com.eventoCache.web</groupId>
-			<artifactId>web</artifactId>
-			<version>${project.version}</version>
+			<groupId>javax.validation</groupId>
+			<artifactId>validation-api</artifactId>
+			<version>2.0.0.Final</version>
 		</dependency>
 
-	<!-- MODULES DENPENDENCY END -->
-	
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
 	</dependencies>
 	
 </project>
