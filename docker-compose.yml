@@ -1,54 +1,79 @@
 version: '3.7'
 services:
-  eventoas-service:
+  eventoangular:
+    image: luizpovoa/eventoangular:0.0.1-SNAPSHOT
+    ports:
+      - 4200:80
+    container_name: EventoAngular
+    environment:
+      EVENTO_APP_URL: https://172.18.0.8:8443
+      EVENTO_RS_URL: https://172.18.0.7:8084
+      EVENTO_AS_URL: https://172.18.0.6:8081
+    restart: always
+    networks:
+      - eventoapp-network
+
+  eventoas:
     image: luizpovoa/eventoas:0.0.1-SNAPSHOT
     ports:
-      - "8081:8081"
+      - 8081:8081
     container_name: EventoAS
     environment:
       VAULT_HOST: 172.18.0.2
-      EVENTOAPP_HOST: https://172.18.0.6:8443
-      EVENTO_CACHE_URI: https://172.18.0.7:8585
-      EVENTOANGULAR_HOST: http://localhost:4200
+      VAULT_ROOT_TOKEN: s.hBOgjdoVINT9E5KOPBu1OZUw
+      EVENTOAPP_HOST: https://172.18.0.8:8443
+      EVENTO_CACHE_URI: http://172.18.0.9:8585
+      EVENTO_WS_URI: http://172.18.0.11:9090
+      EVENTOANGULAR_HOST: http://172.18.0.5:4200
     restart: always
+    depends_on:
+      - vault
     networks:
       - eventoapp-network
 
-  eventors-service:
+  eventors:
     image: luizpovoa/eventors:0.0.1-SNAPSHOT
     ports:
-      - "8084:8084"
+      - 8084:8084
     container_name: EventoRS
     environment:
       VAULT_HOST: 172.18.0.2
-      EVENTOAS_HOST: https://172.18.0.4:8081
-      EVENTO_CACHE_URI: https://172.18.0.7:8585
-      EVENTO_WS_URI: https://172.18.0.8:9090
+      VAULT_ROOT_TOKEN: s.hBOgjdoVINT9E5KOPBu1OZUw
+      EVENTOAS_HOST: https://172.18.0.6:8081
+      EVENTO_CACHE_URI: http://172.18.0.9:8585
+      EVENTO_WS_URI: http://172.18.0.11:9090
     restart: always
+    depends_on:
+      - vault
+      - eventoas
     networks:
       - eventoapp-network
 
-  eventoapp-service:
+  eventoapp:
     image: luizpovoa/eventoapp:0.0.1-SNAPSHOT
     ports:
-      - "8443:8443"
+      - 8443:8443
     container_name: EventoApp
     environment:
       VAULT_HOST: 172.18.0.2
-      EVENTOAS_HOST: https://172.18.0.4:8081
-      EVENTOAPP_HOST: https://172.18.0.6:8443
-      EVENTOANGULAR_HOST: http://localhost:4200
+      VAULT_ROOT_TOKEN: s.hBOgjdoVINT9E5KOPBu1OZUw
+      EVENTOAS_HOST: https://172.18.0.6:8081
+      EVENTOAPP_HOST: https://172.18.0.8:8443
+      EVENTO_CACHE_URI: http://172.18.0.9:8585
+      EVENTO_WS_URI: http://172.18.0.11:9090
+      EVENTOANGULAR_HOST: http://172.18.0.5:4200
     restart: always
+    depends_on:
+      - vault
     networks:
       - eventoapp-network
 
-  eventocache-service:
+  eventocache:
     image: luizpovoa/eventocache:0.0.1-SNAPSHOT
     ports:
-      - "8585:8585"
+      - 8585:8585
     container_name: EventoCache
     environment:
-      VAULT_HOST: 172.18.0.2
       REDIS_HOST: redis-17294.c93.us-east-1-3.ec2.cloud.redislabs.com
       REDIS_PORT: 17294
       REDIS_PASSWORD: jTg6lvzKF0LTvbeTUUewJWaaVrgoWNZ8
@@ -58,11 +83,93 @@ services:
       RABBITMQ_PASSWORD: segredo
       RESPONSE_EXCHANGE: eventoapp.integration.exchange
       RESPONSE_ROUTING_KEY: routingKey_eventoapp
-      EVENTO_WS_URI: https://172.18.0.8:9090
+      EVENTO_WS_URI: http://172.18.0.11:9090
     restart: always
+    networks:
+      - eventoapp-network
+
+  eventobroker:
+    image: luizpovoa/eventocache:0.0.1-SNAPSHOT
+    ports:
+      - 8888:8888
+    container_name: EventoBroker
+    environment:
+      RABBITMQ_HOST: 172.18.0.3
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: eventoapp
+      RABBITMQ_PASSWORD: segredo
+      EVENTO_APP_QUEUE: eventoapp-integration-queue
+      RESPONSE_EXCHANGE: eventoapp.integration.exchange
+      EVENTO_WS_URI: http://172.18.0.11:9090
+    restart: always
+    networks:
+      - eventoapp-network
+
+  eventows:
+    image: luizpovoa/eventows:0.0.1-SNAPSHOT
+    ports:
+      - 9090:9090
+    container_name: EventoWS
+    environment:
+      DATABASE_HOST: 172.18.0.4
+      DATABASE_PORT: 3306
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: hadouken83
+    restart: always
+    networks:
+      - eventoapp-network
+
+  vault:
+    image: vault:latest
+    container_name: vault
+    restart: on-failure
+    ports:
+      - 8200:8200
+    environment:
+      VAULT_ADDR: https://127.0.0.1:8200
+      VAULT_LOCAL_CONFIG: '{"storage":[{"raft":{"path":"./vault/data","node_id":"node1"}}],"listener":[{"tcp":{"address":"127.0.0.1:8200","tls_disable":0,"tls_cert_file":"/data/vault-volume/certificate.pem","tls_key_file":"/data/vault-volume/key.pem"}}],"disable_mlock":true,"api_addr":"http://127.0.0.1:8200","cluster_addr":"https://127.0.0.1:8201","ui":true,"default_lease_ttl":"168h","max_lease_ttl":"720h"}'
+      VAULT_TOKEN: s.hBOgjdoVINT9E5KOPBu1OZUw
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - vault-volume:/data
+    networks:
+      - eventoapp-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      INSERTION_QUEUE: eventoapp-integration-queue
+      NUMBER_OF_VALIDATION_CONSUMERS: 1
+      RESPONSE_EXCHANGE: eventoapp.integration.exchange
+      RESPONSE_ROUTING_KEY: routingKey_eventoapp
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+    networks:
+      - eventoapp-network
+
+  mysql:
+    image: mysql:5.7
+    ports:
+      - 3306:3306
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: hadouken83
+      MYSQL_DATABASE: eventoApp
+    volumes:
+      - mysql-database-data-volume:/var/lib/mysql
     networks:
       - eventoapp-network
 
 networks:
   eventoapp-network:
     external: true
+
+volumes:
+  mysql-database-data-volume:
+  vault-volume:
